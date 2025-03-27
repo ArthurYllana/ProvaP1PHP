@@ -1,56 +1,49 @@
 <?php
+// Conexão com o banco de dados
+class DataBase {
+    private $pdo;
 
-class Database {
-    // Configurações do banco de dados
-    private $host = 'localhost';
-    private $db_name = 'banco_sistema';
-    private $username = 'root';
-    private $password = '';
-    private $DBConn; // Conexão com o banco
+    public function __construct() {
+        $host = '127.0.0.1';
+        $db   = 'provap1';
+        $user = 'root';
+        $pass = '';
+        $charset = 'utf8mb4';
 
-    public function __construct($servidor, $nomeBanco, $usuario, $senha) {
-        $this->host = $servidor;
-        $this->db_name = $nomeBanco;
-        $this->username = $usuario;
-        $this->password = $senha;
-        $this->createDatabase(); // Criar banco se não existir
-    }
+        $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+        $options = [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ];
 
-    // Criar database caso não exista
-    private function createDatabase() {
         try {
-            // Conexão inicial sem banco selecionado
-            $tempConn = new PDO("mysql:host={$this->host}", $this->username, $this->password);
-            $tempConn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $tempConn->exec("CREATE DATABASE IF NOT EXISTS {$this->db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
-            echo "Banco de dados '{$this->db_name}' criado ou já existente.\n";
-
-            // Agora conectar diretamente ao banco criado
-            $this->DBConn = new PDO("mysql:host={$this->host};dbname={$this->db_name}", $this->username, $this->password, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
-            ]);
-        } catch (PDOException $e) {
-            die("Erro ao criar o banco de dados: " . $e->getMessage());
+            $this->pdo = new PDO($dsn, $user, $pass, $options);
+        } catch (\PDOException $e) {
+            die("Erro de conexão: " . $e->getMessage());
         }
     }
 
-    // Criar conexão com o banco
-    public function getConnection() {
-        if (!$this->DBConn) {
-            try {
-                $this->DBConn = new PDO("mysql:host={$this->host};dbname={$this->db_name}", $this->username, $this->password, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
-                ]);
-            } catch (PDOException $e) {
-                die("Erro na conexão com o banco de dados: " . $e->getMessage());
-            }
-        }
-        return $this->DBConn;
+    // Funções para manipulação do banco de dados
+    public function createProduct($pro_descricao, $pro_fabricante, $pro_ingredientes, $pro_orientacoes) {
+        $stmt = $this->pdo->prepare("INSERT INTO produtos (pro_descricao, pro_fabricante, pro_ingredientes, pro_orientacoes) VALUES (?, ?, ?, ?)");
+        return $stmt->execute([$pro_descricao, $pro_fabricante, $pro_ingredientes, $pro_orientacoes]);
+    }
+
+    public function readProduct($pro_cod) {
+        $stmt = $this->pdo->prepare("SELECT * FROM produtos WHERE pro_cod = ?");
+        $stmt->execute([$pro_cod]);
+        return $stmt->fetch();
+    }
+
+    public function updateProduct($pro_cod, $pro_descricao, $pro_fabricante, $pro_ingredientes, $pro_orientacoes) {
+        $stmt = $this->pdo->prepare("UPDATE produtos SET pro_descricao = ?, pro_fabricante = ?, pro_ingredientes = ?, pro_orientacoes = ? WHERE pro_cod = ?");
+        return $stmt->execute([$pro_descricao, $pro_fabricante, $pro_ingredientes, $pro_orientacoes, $pro_cod]);
+    }
+
+    public function deleteProduct($pro_cod) {
+        $stmt = $this->pdo->prepare("DELETE FROM produtos WHERE pro_cod = ?");
+        return $stmt->execute([$pro_cod]);
     }
 }
-
 ?>
