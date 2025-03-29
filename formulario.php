@@ -1,83 +1,197 @@
 <?php
 require_once 'DataBase.php';
+require_once 'BDProdutos.php';
 
-$db = new DataBase();
+$database = new DataBase();
+$dbProdutos = new DBProdutos();
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['acao'])) {
-    $acao = $_POST['acao'];
-    
-    switch ($acao) {
-        case 'inserir':
-            if (empty($_POST['pro_descricao']) || empty($_POST['pro_fabricante']) || 
-                empty($_POST['pro_ingredientes']) || empty($_POST['pro_orientacoes'])) {
-                $mensagem = "<p style='color:red;'>Erro: Todos os campos são obrigatórios para cadastro.</p>";
-                break;
-            }
-            
-            if ($db->createProduct($_POST['pro_descricao'], $_POST['pro_fabricante'], 
+$mensagem = '';
+$resultadoConsulta = '';
+$listaProdutos = '';
+
+// Ação padrão (listar todos)
+$acao = isset($_POST['acao']) ? $_POST['acao'] : 'listar';
+
+switch ($acao) {
+    case 'inserir':
+        if (empty($_POST['pro_descricao']) || empty($_POST['pro_fabricante']) || 
+            empty($_POST['pro_ingredientes']) || empty($_POST['pro_orientacoes'])) {
+            $mensagem = "<p style='color:red;'>Erro: Todos os campos são obrigatórios para cadastro.</p>";
+            break;
+        }
+        
+        try {
+            if ($dbProdutos->create($_POST['pro_descricao'], $_POST['pro_fabricante'], 
                                 $_POST['pro_ingredientes'], $_POST['pro_orientacoes'])) {
                 $mensagem = "<p style='color:green;'>Produto cadastrado com sucesso!</p>";
             } else {
                 $mensagem = "<p style='color:red;'>Erro ao cadastrar produto.</p>";
             }
+        } catch (Exception $e) {
+            $mensagem = "<p style='color:red;'>Erro: " . $e->getMessage() . "</p>";
+        }
+        break;
+    
+    case 'consultar':
+        if (empty($_POST['consulta_pro_cod'])) {
+            $mensagem = "<p style='color:red;'>Erro: Informe o código do produto para consulta.</p>";
             break;
+        }
         
-        case 'consultar':
-            if (empty($_POST['consulta_pro_cod'])) {
-                $mensagem = "<p style='color:red;'>Erro: Informe o código do produto para consulta.</p>";
-                break;
-            }
-            
-            $produto = $db->readProduct($_POST['consulta_pro_cod']);
+        try {
+            $produto = $dbProdutos->recoveryById($_POST['consulta_pro_cod']);
             if ($produto) {
                 $resultadoConsulta = "<fieldset><legend>Dados do Produto</legend>";
+                $resultadoConsulta .= "<form method='post'>";
+                $resultadoConsulta .= "<input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>";
                 $resultadoConsulta .= "<p><strong>Código:</strong> " . htmlspecialchars($produto['pro_cod']) . "</p>";
-                $resultadoConsulta .= "<p><strong>Descrição:</strong> " . htmlspecialchars($produto['pro_descricao']) . "</p>";
-                $resultadoConsulta .= "<p><strong>Fabricante:</strong> " . htmlspecialchars($produto['pro_fabricante']) . "</p>";
-                $resultadoConsulta .= "<p><strong>Ingredientes:</strong> " . htmlspecialchars($produto['pro_ingredientes']) . "</p>";
-                $resultadoConsulta .= "<p><strong>Orientações:</strong> " . htmlspecialchars($produto['pro_orientacoes']) . "</p>";
+                $resultadoConsulta .= "<label><strong>Descrição:</strong><br>";
+                $resultadoConsulta .= "<input type='text' name='pro_descricao' value='" . htmlspecialchars($produto['pro_descricao']) . "' style='width:100%;'></label><br>";
+                $resultadoConsulta .= "<label><strong>Fabricante:</strong><br>";
+                $resultadoConsulta .= "<input type='text' name='pro_fabricante' value='" . htmlspecialchars($produto['pro_fabricante']) . "' style='width:100%;'></label><br>";
+                $resultadoConsulta .= "<label><strong>Ingredientes:</strong><br>";
+                $resultadoConsulta .= "<input type='text' name='pro_ingredientes' value='" . htmlspecialchars($produto['pro_ingredientes']) . "' style='width:100%;'></label><br>";
+                $resultadoConsulta .= "<label><strong>Orientações:</strong><br>";
+                $resultadoConsulta .= "<input type='text' name='pro_orientacoes' value='" . htmlspecialchars($produto['pro_orientacoes']) . "' style='width:100%;'></label><br>";
+                $resultadoConsulta .= "<button type='submit' name='acao' value='alterar'>Salvar Alterações</button>";
+                $resultadoConsulta .= "</form>";
                 $resultadoConsulta .= "</fieldset>";
             } else {
                 $mensagem = "<p style='color:red;'>Nenhum produto encontrado com este código.</p>";
             }
-            break;
+        } catch (Exception $e) {
+            $mensagem = "<p style='color:red;'>Erro: " . $e->getMessage() . "</p>";
+        }
+        break;
 
-        case 'alterar':
-            if (empty($_POST['consulta_pro_cod'])) {
-                $mensagem = "<p style='color:red;'>Erro: Informe o código do produto para alteração.</p>";
-                break;
-            }
-            if (empty($_POST['pro_descricao']) || empty($_POST['pro_fabricante']) || 
-                empty($_POST['pro_ingredientes']) || empty($_POST['pro_orientacoes'])) {
-                $mensagem = "<p style='color:red;'>Erro: Todos os campos são obrigatórios para alteração.</p>";
+        case 'buscar':
+            if (empty($_POST['busca_descricao'])) {
+                $mensagem = "<p style='color:red;'>Erro: Informe um termo para busca.</p>";
                 break;
             }
             
-            if ($db->updateProduct($_POST['consulta_pro_cod'], $_POST['pro_descricao'], 
+            try {
+                $produtos = $dbProdutos->searchByDescription($_POST['busca_descricao']);
+                
+                if ($produtos) {
+                    $listaProdutos = "<fieldset><legend>Resultados da Busca por: " . htmlspecialchars($_POST['busca_descricao']) . "</legend>";
+                    $listaProdutos .= "<table border='1' style='width:100%; border-collapse: collapse;'>";
+                    $listaProdutos .= "<tr><th>Código</th><th>Descrição</th><th>Fabricante</th><th>Orientações</th><th>Ações</th></tr>";
+                    
+                    foreach ($produtos as $produto) {
+                        $listaProdutos .= "<tr>";
+                        $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_cod']) . "</td>";
+                        $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_descricao']) . "</td>";
+                        $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_fabricante']) . "</td>";
+                        $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_orientacoes']) . "</td>";
+                        $listaProdutos .= "<td>
+                            <form method='post' style='display:inline;'>
+                                <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
+                                <button type='submit' name='acao' value='consultar'>Consultar</button>
+                            </form>
+                            <form method='post' style='display:inline;'>
+                                <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
+                                <button type='submit' name='acao' value='alterar'>Alterar</button>
+                            </form>
+                            <form method='post' style='display:inline;'>
+                                <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
+                                <button type='submit' name='acao' value='apagar' onclick='return confirm(\"Tem certeza que deseja excluir?\")'>Excluir</button>
+                            </form>
+                        </td>";
+                        $listaProdutos .= "</tr>";
+                    }
+                    
+                    $listaProdutos .= "</table>";
+                    $listaProdutos .= "</fieldset>";
+                } else {
+                    $mensagem = "<p style='color:blue;'>Nenhum produto encontrado com o termo: " . htmlspecialchars($_POST['busca_descricao']) . "</p>";
+                }
+            } catch (Exception $e) {
+                $mensagem = "<p style='color:red;'>Erro na busca: " . $e->getMessage() . "</p>";
+            }
+            break;
+
+    case 'alterar':
+        if (empty($_POST['consulta_pro_cod'])) {
+            $mensagem = "<p style='color:red;'>Erro: Informe o código do produto para alteração.</p>";
+            break;
+        }
+        if (empty($_POST['pro_descricao']) || empty($_POST['pro_fabricante']) || 
+            empty($_POST['pro_ingredientes']) || empty($_POST['pro_orientacoes'])) {
+            $mensagem = "<p style='color:red;'>Erro: Todos os campos são obrigatórios para alteração.</p>";
+            break;
+        }
+        
+        try {
+            if ($dbProdutos->update($_POST['consulta_pro_cod'], $_POST['pro_descricao'], 
                                 $_POST['pro_fabricante'], $_POST['pro_ingredientes'], $_POST['pro_orientacoes'])) {
                 $mensagem = "<p style='color:green;'>Produto alterado com sucesso!</p>";
             } else {
                 $mensagem = "<p style='color:red;'>Erro ao alterar produto.</p>";
             }
-            break;
+        } catch (Exception $e) {
+            $mensagem = "<p style='color:red;'>Erro: " . $e->getMessage() . "</p>";
+        }
+        break;
 
-        case 'apagar':
-            if (empty($_POST['consulta_pro_cod'])) {
-                $mensagem = "<p style='color:red;'>Erro: Informe o código do produto para exclusão.</p>";
-                break;
-            }
-            
-            if ($db->deleteProduct($_POST['consulta_pro_cod'])) {
+    case 'apagar':
+        if (empty($_POST['consulta_pro_cod'])) {
+            $mensagem = "<p style='color:red;'>Erro: Informe o código do produto para exclusão.</p>";
+            break;
+        }
+        
+        try {
+            if ($dbProdutos->delete($_POST['consulta_pro_cod'])) {
                 $mensagem = "<p style='color:green;'>Produto excluído com sucesso.</p>";
             } else {
                 $mensagem = "<p style='color:red;'>Erro ao excluir produto.</p>";
             }
-            break;
+        } catch (Exception $e) {
+            $mensagem = "<p style='color:red;'>Erro: " . $e->getMessage() . "</p>";
+        }
+        break;
 
-        default:
-            $mensagem = "<p style='color:red;'>Ação inválida.</p>";
-            break;
-    }
+    case 'listar':
+    default:
+        try {
+            $produtos = $dbProdutos->listAll();
+            if ($produtos) {
+                $listaProdutos = "<fieldset><legend>Lista de Produtos</legend>";
+                $listaProdutos .= "<table border='1' style='width:100%; border-collapse: collapse;'>";
+                $listaProdutos .= "<tr><th>Código</th><th>Descrição</th><th>Fabricante</th><th>Orientações</th><th>Ações</th></tr>";
+                
+                foreach ($produtos as $produto) {
+                    $listaProdutos .= "<tr>";
+                    $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_cod']) . "</td>";
+                    $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_descricao']) . "</td>";
+                    $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_fabricante']) . "</td>";
+                    $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_orientacoes']) . "</td>";
+                    $listaProdutos .= "<td>
+                        <form method='post' style='display:inline;'>
+                            <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
+                            <button type='submit' name='acao' value='consultar'>Consultar</button>
+                        </form>
+                        <form method='post' style='display:inline;'>
+                            <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
+                            <button type='submit' name='acao' value='alterar'>Alterar</button>
+                        </form>
+                        <form method='post' style='display:inline;'>
+                            <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
+                            <button type='submit' name='acao' value='apagar' onclick='return confirm(\"Tem certeza que deseja excluir?\")'>Excluir</button>
+                        </form>
+                    </td>";
+                    $listaProdutos .= "</tr>";
+                }
+                
+                $listaProdutos .= "</table>";
+                $listaProdutos .= "</fieldset>";
+            } else {
+                $listaProdutos = "<p>Nenhum produto cadastrado.</p>";
+            }
+        } catch (Exception $e) {
+            $mensagem = "<p style='color:red;'>Erro ao listar produtos: " . $e->getMessage() . "</p>";
+        }
+        break;
 }
 ?>
 
@@ -87,51 +201,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['acao'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de Produtos</title>
-    <style>
-        fieldset {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #ccc;
-        }
-        legend {
-            font-weight: bold;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-        }
-        input[type="text"] {
-            width: 300px;
-            padding: 5px;
-        }
-        button {
-            margin-top: 10px;
-            padding: 5px 15px;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="tela.css"/>
+
 </head>
 <body>
+    <h1>Sistema de Cadastro de Produtos</h1>
+    
+    <!-- Formulário de Cadastro -->
     <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
-        <!-- Formulário de Cadastro -->
         <fieldset>
             <legend>Cadastrar Novo Produto</legend>
             <label for="pro_descricao">Descrição:</label>
-            <input type="text" id="pro_descricao" name="pro_descricao">
+            <input type="text" id="pro_descricao" name="pro_descricao" required>
             
             <label for="pro_fabricante">Fabricante:</label>
-            <input type="text" id="pro_fabricante" name="pro_fabricante">
+            <input type="text" id="pro_fabricante" name="pro_fabricante" required>
             
             <label for="pro_ingredientes">Ingredientes:</label>
-            <input type="text" id="pro_ingredientes" name="pro_ingredientes">
+            <input type="text" id="pro_ingredientes" name="pro_ingredientes" required>
             
             <label for="pro_orientacoes">Orientações:</label>
-            <input type="text" id="pro_orientacoes" name="pro_orientacoes">
+            <input type="text" id="pro_orientacoes" name="pro_orientacoes" required>
             
             <button type="submit" name="acao" value="inserir">Cadastrar</button>
         </fieldset>
+    </form>
 
-        <!-- Formulário de Consulta/Alteração/Exclusão -->
+    <!-- Formulário de Busca -->
+    <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
+        <fieldset>
+            <legend>Buscar Produto</legend>
+            <label for="busca_descricao">Descrição (ou parte dela):</label>
+            <input type="text" id="busca_descricao" name="busca_descricao">
+            
+            <button type="submit" name="acao" value="buscar">Buscar</button>
+        </fieldset>
+    </form>
+
+    <!-- Formulário de Consulta/Alteração/Exclusão -->
+    <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
         <fieldset>
             <legend>Consultar/Alterar/Excluir</legend>
             <label for="consulta_pro_cod">Código do Produto:</label>
@@ -139,19 +247,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['acao'])) {
             
             <div style="margin-top: 15px;">
                 <button type="submit" name="acao" value="consultar">Consultar</button>
-                <button type="submit" name="acao" value="alterar">Alterar</button>
-                <button type="submit" name="acao" value="apagar">Excluir</button>
+                <button type="submit" name="acao" value="listar">Listar Todos</button>
             </div>
         </fieldset>
     </form>
 
     <?php
+    // Exibe mensagens de status
     if (isset($mensagem)) {
         echo $mensagem;
     }
     
+    // Exibe resultado de consulta
     if (isset($resultadoConsulta)) {
         echo $resultadoConsulta;
+    }
+    
+    // Exibe lista de produtos
+    if (isset($listaProdutos)) {
+        echo $listaProdutos;
     }
     ?>
 </body>
