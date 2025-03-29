@@ -1,12 +1,12 @@
 <?php
-class DataBase {
+class DataBase { //Variáveis que armazenam as informações para conexão  
     private $host = 'localhost';
     private $db_name = 'provap1';
     private $username = 'root';
     private $password = '';
     private $DBConn;
 
-    // Construtor modificado para ser opcional
+    // Construtor para passar parâmetros para definir as configurações do banco de dados
     public function __construct($servidor = null, $nomeBanco = null, $usuario = null, $senha = null) {
         $this->host = $servidor ?? $this->host;
         $this->db_name = $nomeBanco ?? $this->db_name;
@@ -14,7 +14,7 @@ class DataBase {
         $this->password = $senha ?? $this->password;
     }
 
-    public function getConnection() {
+    public function getConnection() { //Estabelece a conexão com o banco de dados
         $this->DBConn = null;
         try {
             $this->DBConn = new PDO('mysql:host=' . $this->host . ';dbname=' . $this->db_name, $this->username, $this->password);

@@ -54,6 +54,7 @@ class DBProdutos {
             throw new Exception("Erro ao deletar produto: " . $erro->getMessage());
         }
     }
+    // Método para buscar a descrição de um produto
     public function searchByDescription($term) {
         $sql = 'SELECT * FROM produtos WHERE pro_descricao LIKE ? ORDER BY pro_cod';
         $stmt = $this->conexao->prepare($sql);

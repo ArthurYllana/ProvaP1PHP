@@ -9,21 +9,23 @@ $mensagem = '';
 $resultadoConsulta = '';
 $listaProdutos = '';
 
-// Ação padrão (listar todos)
-$acao = isset($_POST['acao']) ? $_POST['acao'] : 'listar';
+//Armazem mensagem de status, resultados de consultas ou lista de produtos 
 
-switch ($acao) {
+// Ação padrão (listar todos)
+$acao = isset($_POST['acao']) ? $_POST['acao'] : 'listar'; //Verificando se a variável foi enviada para o formulario e não é null
+
+switch ($acao) {  //Executando a ação se a opção inserir for executada 
     case 'inserir':
         if (empty($_POST['pro_descricao']) || empty($_POST['pro_fabricante']) || 
             empty($_POST['pro_ingredientes']) || empty($_POST['pro_orientacoes'])) {
-            $mensagem = "<p style='color:red;'>Erro: Todos os campos são obrigatórios para cadastro.</p>";
+            $mensagem = "<p style='color:red;'>Erro: Todos os campos são obrigatórios para cadastro.</p>"; // Verificando se os campos estão vazios
             break;
         }
         
         try {
             if ($dbProdutos->create($_POST['pro_descricao'], $_POST['pro_fabricante'], 
                                 $_POST['pro_ingredientes'], $_POST['pro_orientacoes'])) {
-                $mensagem = "<p style='color:green;'>Produto cadastrado com sucesso!</p>";
+                $mensagem = "<p style='color:green;'>Produto cadastrado com sucesso!</p>"; //Usado para inserir um novo produto 
             } else {
                 $mensagem = "<p style='color:red;'>Erro ao cadastrar produto.</p>";
             }
@@ -35,15 +37,15 @@ switch ($acao) {
     case 'consultar':
         if (empty($_POST['consulta_pro_cod'])) {
             $mensagem = "<p style='color:red;'>Erro: Informe o código do produto para consulta.</p>";
-            break;
+            break; //Valida se o código foi informado 
         }
         
-        try {
+        try { //Fazendo a busca do produto no banco de dados
             $produto = $dbProdutos->recoveryById($_POST['consulta_pro_cod']);
             if ($produto) {
-                $resultadoConsulta = "<fieldset><legend>Dados do Produto</legend>";
+                $resultadoConsulta = "<fieldset><legend>Dados do Produto</legend>";//Agrupando dados do produtos
                 $resultadoConsulta .= "<form method='post'>";
-                $resultadoConsulta .= "<input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>";
+                $resultadoConsulta .= "<input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>"; // armazena o código do produto para alteração
                 $resultadoConsulta .= "<p><strong>Código:</strong> " . htmlspecialchars($produto['pro_cod']) . "</p>";
                 $resultadoConsulta .= "<label><strong>Descrição:</strong><br>";
                 $resultadoConsulta .= "<input type='text' name='pro_descricao' value='" . htmlspecialchars($produto['pro_descricao']) . "' style='width:100%;'></label><br>";
@@ -65,20 +67,20 @@ switch ($acao) {
         break;
 
         case 'buscar':
-            if (empty($_POST['busca_descricao'])) {
+            if (empty($_POST['busca_descricao'])) { //Verificando se o campo está vazio
                 $mensagem = "<p style='color:red;'>Erro: Informe um termo para busca.</p>";
                 break;
             }
             
             try {
-                $produtos = $dbProdutos->searchByDescription($_POST['busca_descricao']);
+                $produtos = $dbProdutos->searchByDescription($_POST['busca_descricao']); //Realiza a busca pelo banco de dados
                 
-                if ($produtos) {
+                if ($produtos) { //Monta a tabela para exibir os resultados 
                     $listaProdutos = "<fieldset><legend>Resultados da Busca por: " . htmlspecialchars($_POST['busca_descricao']) . "</legend>";
                     $listaProdutos .= "<table border='1' style='width:100%; border-collapse: collapse;'>";
-                    $listaProdutos .= "<tr><th>Código</th><th>Descrição</th><th>Fabricante</th><th>Ingredientes</th><th>Orientações</th><th>Ações</th></tr>";
+                    $listaProdutos .= "<tr><th>Código</th><th>Descrição</th><th>Fabricante</th><th>Ingredientes</th><th>Orientações</th><th>Ações</th></tr>"; 
                     
-                    foreach ($produtos as $produto) {
+                    foreach ($produtos as $produto) { //Percerro o arry dos produtos e 
                         $listaProdutos .= "<tr>";
                         $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_cod']) . "</td>";
                         $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_descricao']) . "</td>";
@@ -86,7 +88,7 @@ switch ($acao) {
                         $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_ingredientes']) . "</td>";
                         $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_orientacoes']) . "</td>";
                         $listaProdutos .= "<td>
-                            <form method='post' style='display:inline;'>
+                            <form method='post' style='display:inline;'> 
                                 <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
                                 <button type='submit' name='acao' value='consultar'>Consultar</button>
                             </form>
@@ -119,7 +121,7 @@ switch ($acao) {
             break;
         }
         
-        try {
+        try { //Passa os valores recebidos
             if ($dbProdutos->update($_POST['consulta_pro_cod'], $_POST['pro_descricao'], 
                                 $_POST['pro_fabricante'], $_POST['pro_ingredientes'], $_POST['pro_orientacoes'])) {
                 $mensagem = "<p style='color:green;'>Produto alterado com sucesso!</p>";
@@ -149,9 +151,9 @@ switch ($acao) {
         break;
 
     case 'listar':
-    default:
+    default: //Se a aplicação não reconhecer a ação enviada, ela exibirá a lista de produtos por padrão.
         try {
-            $produtos = $dbProdutos->listAll();
+            $produtos = $dbProdutos->listAll(); //Busca os produtos do banco de dados
             if ($produtos) {
                 $listaProdutos = "<fieldset><legend>Lista de Produtos</legend>";
                 $listaProdutos .= "<table border='1' style='width:100%; border-collapse: collapse;'>";
