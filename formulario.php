@@ -76,22 +76,19 @@ switch ($acao) {
                 if ($produtos) {
                     $listaProdutos = "<fieldset><legend>Resultados da Busca por: " . htmlspecialchars($_POST['busca_descricao']) . "</legend>";
                     $listaProdutos .= "<table border='1' style='width:100%; border-collapse: collapse;'>";
-                    $listaProdutos .= "<tr><th>Código</th><th>Descrição</th><th>Fabricante</th><th>Orientações</th><th>Ações</th></tr>";
+                    $listaProdutos .= "<tr><th>Código</th><th>Descrição</th><th>Fabricante</th><th>Ingredientes</th><th>Orientações</th><th>Ações</th></tr>";
                     
                     foreach ($produtos as $produto) {
                         $listaProdutos .= "<tr>";
                         $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_cod']) . "</td>";
                         $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_descricao']) . "</td>";
                         $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_fabricante']) . "</td>";
+                        $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_ingredientes']) . "</td>";
                         $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_orientacoes']) . "</td>";
                         $listaProdutos .= "<td>
                             <form method='post' style='display:inline;'>
                                 <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
                                 <button type='submit' name='acao' value='consultar'>Consultar</button>
-                            </form>
-                            <form method='post' style='display:inline;'>
-                                <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
-                                <button type='submit' name='acao' value='alterar'>Alterar</button>
                             </form>
                             <form method='post' style='display:inline;'>
                                 <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
@@ -158,22 +155,19 @@ switch ($acao) {
             if ($produtos) {
                 $listaProdutos = "<fieldset><legend>Lista de Produtos</legend>";
                 $listaProdutos .= "<table border='1' style='width:100%; border-collapse: collapse;'>";
-                $listaProdutos .= "<tr><th>Código</th><th>Descrição</th><th>Fabricante</th><th>Orientações</th><th>Ações</th></tr>";
+                $listaProdutos .= "<tr><th>Código</th><th>Descrição</th><th>Fabricante</th><th>Ingredientes</th><th>Orientações</th><th>Ações</th></tr>";
                 
                 foreach ($produtos as $produto) {
                     $listaProdutos .= "<tr>";
                     $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_cod']) . "</td>";
                     $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_descricao']) . "</td>";
                     $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_fabricante']) . "</td>";
+                    $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_ingredientes']) . "</td>";
                     $listaProdutos .= "<td>" . htmlspecialchars($produto['pro_orientacoes']) . "</td>";
                     $listaProdutos .= "<td>
                         <form method='post' style='display:inline;'>
                             <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
                             <button type='submit' name='acao' value='consultar'>Consultar</button>
-                        </form>
-                        <form method='post' style='display:inline;'>
-                            <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
-                            <button type='submit' name='acao' value='alterar'>Alterar</button>
                         </form>
                         <form method='post' style='display:inline;'>
                             <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
