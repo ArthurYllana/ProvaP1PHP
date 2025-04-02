@@ -90,7 +90,7 @@ switch ($acao) {  //Executando a ação se a opção inserir for executada
                         $listaProdutos .= "<td>
                             <form method='post' style='display:inline;'> 
                                 <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
-                                <button type='submit' name='acao' value='consultar'>Consultar</button>
+                                <button type='submit' name='acao' value='consultar'>Alterar</button>
                             </form>
                             <form method='post' style='display:inline;'>
                                 <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
@@ -169,7 +169,7 @@ switch ($acao) {  //Executando a ação se a opção inserir for executada
                     $listaProdutos .= "<td>
                         <form method='post' style='display:inline;'>
                             <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
-                            <button type='submit' name='acao' value='consultar'>Consultar</button>
+                            <button type='submit' name='acao' value='consultar'>Consultar/Alterar</button>
                         </form>
                         <form method='post' style='display:inline;'>
                             <input type='hidden' name='consulta_pro_cod' value='" . $produto['pro_cod'] . "'>
